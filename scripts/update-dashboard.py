@@ -67,7 +67,7 @@ def build_section(s):
     return f"""## 📊 현재 상황 대시보드
 
 <Info>
-**스냅샷 기준일:** {s['date']} · 자동 업데이트 아님 (수동 재생성 필요)
+**스냅샷 기준일:** {s['date']} · 매일 평일 07:00(KST) GitHub Actions로 자동 갱신
 </Info>
 
 ### 🎯 오늘의 신호
