@@ -31,13 +31,18 @@ async def fetch_posts(limit=5):
         await page.wait_for_timeout(1500)
         raw = await page.evaluate("""
             () => Array.from(
-              document.querySelectorAll('[data-section-name="커뮤니티__게시글"]')
-            ).slice(0, 8).map(n => n.innerText || '')
+              document.querySelectorAll('[data-post-anchor-id]')
+            ).slice(0, 8).map(n => ({
+              id: n.getAttribute('data-post-anchor-id'),
+              text: n.innerText || ''
+            }))
         """)
         await browser.close()
     return raw[:limit]
 
-def parse(text):
+def parse(item):
+    post_id = item["id"]
+    text = item["text"]
     lines = [l.strip() for l in text.split("\n") if l.strip()]
     # skip leading '주주'
     if lines and lines[0] == "주주":
@@ -59,24 +64,22 @@ def parse(text):
         likes = body[-1]
         body = body[:-1]
     content = " · ".join(body) if body else "(내용 없음)"
-    if len(content) > 140:
-        content = content[:140] + "…"
+    if len(content) > 60:
+        content = content[:60] + "…"
     return {
+        "url": f"https://www.tossinvest.com/community/posts/{post_id}",
         "author": author,
         "time": time,
         "content": content,
-        "likes": likes or "-",
-        "comments": comments or "-",
     }
 
 def render(posts):
     lines = ["### 💬 토스 커뮤니티 인기글 Top 5", "",
-             "| # | 작성자 | 시간 | 내용 | 👍 | 💬 |",
-             "|---|---|---|---|---:|---:|"]
-    for i, p in enumerate(posts, 1):
-        # escape pipes in content
-        c = p["content"].replace("|", "\\|")
-        lines.append(f"| {i} | {p['author']} | {p['time']} | {c} | {p['likes']} | {p['comments']} |")
+             "| 작성자 | 시간 | 내용 |",
+             "|---|---|---|"]
+    for p in posts:
+        c = p["content"].replace("|", "\\|").replace("[", "〔").replace("]", "〕")
+        lines.append(f"| {p['author']} | {p['time']} | [{c}]({p['url']}) |")
     lines += ["",
               '<Card title="토스 커뮤니티에서 더 보기" icon="comments" href="https://www.tossinvest.com/stocks/US20100211003/community">',
               "  전체 글 및 최신 의견 확인",
@@ -88,7 +91,7 @@ async def main():
     posts = [p for p in (parse(r) for r in raw) if p]
     print(f"추출 {len(posts)}건")
     for p in posts:
-        print(f"- [{p['time']}] {p['author']}: {p['content'][:40]}… (👍{p['likes']} 💬{p['comments']})")
+        print(f"- [{p['time']}] {p['author']}: {p['content'][:40]} → {p['url']}")
 
     section = render(posts)
 
