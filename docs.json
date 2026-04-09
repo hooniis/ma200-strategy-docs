@@ -11,11 +11,20 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "가이드",
+        "tab": "대시보드",
+        "groups": [
+          {
+            "group": "실시간",
+            "pages": ["dashboard"]
+          }
+        ]
+      },
+      {
+        "tab": "200일선 매매법",
         "groups": [
           {
             "group": "시작하기",
-            "pages": ["introduction"]
+            "pages": ["summary"]
           },
           {
             "group": "전략",

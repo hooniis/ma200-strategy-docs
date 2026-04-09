@@ -19,7 +19,7 @@ jobs:
           python-version: '3.12'
 
       - name: Install deps
-        run: pip install yfinance pandas
+        run: pip install yfinance pandas matplotlib
 
       - name: Run update script
         run: python scripts/update-dashboard.py
@@ -28,10 +28,10 @@ jobs:
         run: |
           git config user.name "hooniis"
           git config user.email "29851197+hooniis@users.noreply.github.com"
-          if git diff --quiet introduction.mdx; then
+          git add dashboard.mdx images/dashboard-chart.png
+          if git diff --cached --quiet; then
             echo "No changes"
             exit 0
           fi
-          git add introduction.mdx
           git commit -m "chore(dashboard): auto-update snapshot $(date -u +%Y-%m-%d)"
           git push
