@@ -18,7 +18,6 @@ description: "TQQQ 200일 이동평균선만으로 움직이는 추세추종 시
 
 <CardGroup cols={2}>
   <Card title="🟦 하락 상황" icon="arrow-trend-down">
-    TQQQ가 200일선 **아래**에 있습니다.
     **권장 행동: SGOV 100% 보유 (현금 대피)**
   </Card>
   <Card title="TQQQ 현재가" icon="dollar-sign">
@@ -38,22 +37,11 @@ description: "TQQQ 200일 이동평균선만으로 움직이는 추세추종 시
 | **52주 최고가** | $60.11 |
 | **52주 최저가** | $19.31 |
 
-### 🚦 판정 로직
-
-```
-TQQQ ($44.15) vs 200MA ($49.16)
-  ↓
-$44.15 < $49.16  →  🟦 하락 상황
-  ↓
-행동: TQQQ·SPYM 전량 매도 → SGOV 100%
-      신규 자금도 SGOV에 보관, 다음 신호 대기
-```
-
 ### 📉 라이브 차트 (TradingView)
 
 <Frame>
   <iframe
-    src="https://s.tradingview.com/widgetembed/?frameElementId=tv_chart&symbol=NASDAQ%3ATQQQ&interval=D&hidesidetoolbar=0&symboledit=1&saveimage=1&studies=%5B%22MASimple%40tv-basicstudies%22%2C%22BB%40tv-basicstudies%22%5D&theme=light&style=1&timezone=Asia%2FSeoul&withdateranges=1&showpopupbutton=1&locale=kr"
+    src="https://s.tradingview.com/widgetembed/?frameElementId=tv_chart&symbol=NASDAQ%3ATQQQ&interval=D&hidesidetoolbar=0&symboledit=1&saveimage=1&studies=%5B%22MASimple%40tv-basicstudies%22%5D&theme=light&style=1&timezone=Asia%2FSeoul&withdateranges=1&showpopupbutton=1&locale=kr"
     width="100%"
     height="500"
     frameBorder="0"
@@ -64,7 +52,6 @@ $44.15 < $49.16  →  🟦 하락 상황
 
 <Tip>
 차트에 **Moving Average** 지표를 200으로 설정하면 전략 기준선이 그대로 보입니다.
-TradingView 상단 지표 버튼 → "이동평균" → Length: 200.
 </Tip>
 
 ---
