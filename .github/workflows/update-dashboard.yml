@@ -19,10 +19,16 @@ jobs:
           python-version: '3.12'
 
       - name: Install deps
-        run: pip install yfinance pandas matplotlib
+        run: |
+          pip install yfinance pandas matplotlib playwright
+          python -m playwright install --with-deps chromium
 
-      - name: Run update script
+      - name: Run chart/status update
         run: python scripts/update-dashboard.py
+
+      - name: Scrape Toss community posts
+        run: python scripts/scrape-toss-posts.py
+        continue-on-error: true
 
       - name: Commit & push if changed
         run: |
