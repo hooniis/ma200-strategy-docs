@@ -1,0 +1,44 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "200일선 매매법",
+  "colors": {
+    "primary": "#1f77b4",
+    "light": "#4a9fd8",
+    "dark": "#0d4f7a"
+  },
+  "favicon": "/favicon.svg",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "가이드",
+        "groups": [
+          {
+            "group": "시작하기",
+            "pages": ["introduction"]
+          },
+          {
+            "group": "전략",
+            "pages": [
+              "strategy/overview",
+              "strategy/playbook"
+            ]
+          },
+          {
+            "group": "백테스트 & 실험",
+            "pages": [
+              "backtest/results",
+              "backtest/trades",
+              "backtest/whipsaw"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/hooniis"
+    }
+  }
+}

@@ -1,0 +1,73 @@
+---
+title: "200일선 매매법"
+description: "TQQQ 200일 이동평균선만으로 움직이는 추세추종 시스템"
+---
+
+<Note>
+이 문서는 아기티큐(AGITQ) 블로그의 **200일선 매매법** 전략을 정리·백테스트·재검증한 개인 학습 자료입니다.
+투자 권유가 아니며, 모든 투자 결정과 결과의 책임은 투자자 본인에게 있습니다.
+</Note>
+
+## 한 줄 요약
+
+> **매일 아침 5분, TQQQ 종가가 200일선 위냐 아래냐만 본다.
+> 신호가 바뀌었으면 기계처럼 실행한다. 그게 전부다.**
+
+## 왜 이 전략인가
+
+<CardGroup cols={2}>
+  <Card title="검증된 손익 구조" icon="chart-line">
+    손절 중위 **-3%**, 익절 중위 **+40%**.
+    작은 손실을 "저렴한 보험료"로 지불하고
+    큰 상승을 놓치지 않는 구조.
+  </Card>
+  <Card title="방어력이 핵심" icon="shield">
+    54년 백테스트 기준 MDD **-53%**.
+    TQQQ 단순보유(-99.96%)를 피하면서
+    CAGR **25%** 달성.
+  </Card>
+  <Card title="예측 없음" icon="brain">
+    시장 예측, 뉴스 해석, 감정 개입 모두 금지.
+    오직 TQQQ 200일선 위/아래만 판단.
+  </Card>
+  <Card title="하루 5분" icon="clock">
+    한국시간 아침 확정 종가로만 판단.
+    밤새 미국장 지켜볼 필요 없음.
+  </Card>
+</CardGroup>
+
+## 3가지 시장 상황
+
+<Steps>
+  <Step title="🟦 하락 상황">
+    **TQQQ 종가 < 200일선** — 모두 SGOV로 대피
+  </Step>
+  <Step title="🟥 집중 투자 상황">
+    **200일선 < TQQQ < 200일선 × 1.05** — TQQQ 올인
+  </Step>
+  <Step title="🟧 과열 상황">
+    **TQQQ > 200일선 × 1.05** — TQQQ 유지, 신규자금은 SPYM
+  </Step>
+</Steps>
+
+## 이 문서의 구성
+
+<CardGroup cols={2}>
+  <Card title="전략 개요" href="/strategy/overview">
+    세 가지 자산, 200일선 기준, 매매 원칙 상세
+  </Card>
+  <Card title="실전 매매 가이드" href="/strategy/playbook">
+    매일 아침 5분 루틴, 스탑로스, 익절 원칙
+  </Card>
+  <Card title="백테스트 결과" href="/backtest/results">
+    2010~2026 실데이터 재현, 블로그 주장 검증
+  </Card>
+  <Card title="파라미터 실험" href="/backtest/whipsaw">
+    151×3 크로스, 완충대 등 대안 비교
+  </Card>
+</CardGroup>
+
+## 원 출처
+
+- [아기티큐 블로그 (네이버)](https://blog.naver.com/humblich/224019523362)
+- [수수료 반영 재검증 (fmkorea)](https://www.fmkorea.com/9586865706)
