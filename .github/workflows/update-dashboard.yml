@@ -1,0 +1,37 @@
+name: Update Dashboard
+
+on:
+  schedule:
+    # 매일 UTC 22:00 (미국장 마감 +2h, EDT 18:00 / EST 17:00)
+    - cron: '0 22 * * 1-5'
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install deps
+        run: pip install yfinance pandas
+
+      - name: Run update script
+        run: python scripts/update-dashboard.py
+
+      - name: Commit & push if changed
+        run: |
+          git config user.name "hooniis"
+          git config user.email "29851197+hooniis@users.noreply.github.com"
+          if git diff --quiet introduction.mdx; then
+            echo "No changes"
+            exit 0
+          fi
+          git add introduction.mdx
+          git commit -m "chore(dashboard): auto-update snapshot $(date -u +%Y-%m-%d)"
+          git push
