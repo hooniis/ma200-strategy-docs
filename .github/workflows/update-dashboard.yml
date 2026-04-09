@@ -28,7 +28,7 @@ jobs:
         run: |
           git config user.name "hooniis"
           git config user.email "29851197+hooniis@users.noreply.github.com"
-          git add dashboard.mdx images/dashboard-chart.png
+          git add dashboard.mdx images/dashboard-chart-1y.png images/dashboard-chart-1m.png
           if git diff --cached --quiet; then
             echo "No changes"
             exit 0

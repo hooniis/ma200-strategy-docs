@@ -17,7 +17,8 @@ import matplotlib.dates as mdates
 
 DOCS_DIR = Path(__file__).parent.parent
 MDX_PATH = DOCS_DIR / "dashboard.mdx"
-IMG_PATH = DOCS_DIR / "images" / "dashboard-chart.png"
+IMG_1Y = DOCS_DIR / "images" / "dashboard-chart-1y.png"
+IMG_1M = DOCS_DIR / "images" / "dashboard-chart-1m.png"
 
 def fetch_data():
     t = yf.download('TQQQ', period='2y', progress=False, auto_adjust=True)['Close'].squeeze().dropna()
@@ -61,11 +62,10 @@ def build_state(t, ma200):
         "diff_emoji": diff_emoji,
     }
 
-def draw_chart(t, ma200, s):
-    IMG_PATH.parent.mkdir(parents=True, exist_ok=True)
-    # 최근 1년 (252영업일)
-    t1 = t.iloc[-252:]
-    ma1 = ma200.iloc[-252:]
+def draw_chart(t, ma200, s, days, out_path, title_range):
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    t1 = t.iloc[-days:]
+    ma1 = ma200.iloc[-days:]
     env1 = ma1 * 1.05
 
     fig, ax = plt.subplots(figsize=(12, 5.5), dpi=130)
@@ -86,20 +86,24 @@ def draw_chart(t, ma200, s):
     situation_en = {'🟦 하락 상황': 'BEAR (below MA200)',
                     '🟥 집중 투자 상황': 'BULL (MA200 ~ +5%)',
                     '🟧 과열 상황': 'OVERHEAT (> MA200 +5%)'}.get(s['situation'], s['situation'])
-    ax.set_title(f"TQQQ vs 200-day MA  |  {situation_en}  |  {s['date']}",
+    ax.set_title(f"TQQQ vs 200-day MA  |  {title_range}  |  {situation_en}  |  {s['date']}",
                  fontsize=14, fontweight='bold', pad=14)
     ax.set_ylabel('Price ($)', fontsize=10)
     ax.grid(True, linestyle=':', alpha=0.4)
     ax.legend(loc='upper left', framealpha=0.9, fontsize=9)
 
-    ax.xaxis.set_major_locator(mdates.MonthLocator(interval=2))
-    ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m'))
+    if days <= 30:
+        ax.xaxis.set_major_locator(mdates.DayLocator(interval=3))
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
+    else:
+        ax.xaxis.set_major_locator(mdates.MonthLocator(interval=2))
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m'))
     plt.setp(ax.get_xticklabels(), rotation=0, ha='center')
 
     plt.tight_layout()
-    plt.savefig(IMG_PATH, facecolor=fig.get_facecolor())
+    plt.savefig(out_path, facecolor=fig.get_facecolor())
     plt.close(fig)
-    print(f"✅ 차트 저장: {IMG_PATH}")
+    print(f"✅ 차트 저장: {out_path}")
 
 def build_section(s):
     return f"""## 📊 현재 상황 대시보드
@@ -131,15 +135,25 @@ def build_section(s):
 | **52주 최고가** | ${s['high52']} |
 | **52주 최저가** | ${s['low52']} |
 
-### 📉 200일선 차트 (최근 1년)
+### 📉 200일선 차트
 
-<Frame>
-  <img src="/images/dashboard-chart.png" alt="TQQQ 200일선 차트" />
+<Frame caption="최근 1년">
+  <img src="/images/dashboard-chart-1y.png" alt="TQQQ 200-day MA (1Y)" />
+</Frame>
+
+<Frame caption="최근 1개월">
+  <img src="/images/dashboard-chart-1m.png" alt="TQQQ 200-day MA (1M)" />
 </Frame>
 
 <Tip>
 차트는 매일 평일 미국장 마감 후 자동 갱신됩니다. 파란 선은 TQQQ 종가, 빨간 선은 200일선, 주황 점선은 과열선(200MA +5%)입니다.
 </Tip>
+
+### 🛒 주문하기
+
+<Card title="토스증권에서 TQQQ 주문" icon="cart-shopping" href="https://www.tossinvest.com/stocks/US20100211003/order">
+  현재 신호에 맞춰 바로 주문 페이지로 이동
+</Card>
 
 ---
 """
@@ -149,7 +163,8 @@ def main():
     state = build_state(t, ma200)
     print(f"현재 상태: {state['situation']} (TQQQ ${state['price']}, 200MA ${state['ma200']}, 괴리 {state['diff_pct']:+.2f}%)")
 
-    draw_chart(t, ma200, state)
+    draw_chart(t, ma200, state, 252, IMG_1Y, "1Y")
+    draw_chart(t, ma200, state, 22, IMG_1M, "1M")
 
     content = MDX_PATH.read_text(encoding='utf-8')
     new_section = build_section(state)
