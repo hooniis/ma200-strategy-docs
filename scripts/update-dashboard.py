@@ -169,7 +169,7 @@ def send_telegram(state):
         return
     s = state
     text = (
-        f"📊 *200일선 매매법 일일 스냅샷*\n"
+        f"📊 *200일선 매매법 오늘의 알림*\n"
         f"🗓 {s['date']}\n\n"
         f"{s['situation']}\n"
         f"➡️ *{s['action']}*\n\n"
