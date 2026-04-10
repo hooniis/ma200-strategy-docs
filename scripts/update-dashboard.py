@@ -178,7 +178,7 @@ def send_telegram(state):
         f"• 과열선(+5%): ${s['envelope']}\n"
         f"• 200일선 대비: *{s['diff_pct']:+.2f}%* {s['diff_emoji']}\n"
         f"• 52주 고/저: ${s['high52']} / ${s['low52']}\n\n"
-        f"🔗 [대시보드](https://ma200-strategy-docs.mintlify.app/dashboard) · "
+        f"🔗 [대시보드](https://hooniis.mintlify.app/dashboard) · "
         f"[주문](https://www.tossinvest.com/stocks/US20100211003/order)"
     )
     url = f"https://api.telegram.org/bot{token}/sendMessage"
