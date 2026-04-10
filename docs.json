@@ -33,7 +33,8 @@
             "pages": [
               "backtest/results",
               "backtest/trades",
-              "backtest/whipsaw"
+              "backtest/whipsaw",
+              "backtest/sqqq"
             ]
           }
         ]

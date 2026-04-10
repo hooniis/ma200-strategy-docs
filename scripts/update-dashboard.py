@@ -27,9 +27,59 @@ IMG_1M = DOCS_DIR / "images" / "dashboard-chart-1m.png"
 def fetch_data():
     t = yf.download('TQQQ', period='2y', progress=False, auto_adjust=True)['Close'].squeeze().dropna()
     ma200 = t.rolling(200).mean()
-    return t, ma200
+    # additional tickers for comparison & SGOV yield
+    qqq = yf.download('QQQ', period='1y', progress=False, auto_adjust=True)['Close'].squeeze().dropna()
+    spy = yf.download('SPY', period='1y', progress=False, auto_adjust=True)['Close'].squeeze().dropna()
+    sgov = yf.download('SGOV', period='1y', progress=False, auto_adjust=True)['Close'].squeeze().dropna()
+    return t, ma200, qqq, spy, sgov
 
-def build_state(t, ma200):
+def _period_return(series, days):
+    """Calculate return over last N trading days."""
+    if len(series) < days + 1:
+        return None
+    return round((float(series.iloc[-1]) / float(series.iloc[-days - 1]) - 1) * 100, 2)
+
+def _classify(price, ma, envelope):
+    if price < ma:
+        return "하락"
+    elif price < envelope:
+        return "집중투자"
+    else:
+        return "과열"
+
+def build_signal_history(t, ma200):
+    """Find last 5 state transitions with P&L on TQQQ exits."""
+    env = ma200 * 1.05
+    valid = t.index[ma200.notna()]
+    if len(valid) < 2:
+        return []
+    prev_state = _classify(float(t[valid[0]]), float(ma200[valid[0]]), float(env[valid[0]]))
+    transitions = []
+    entry_price = None  # price when entering TQQQ (하락→집중투자 or 하락→과열)
+    for d in valid[1:]:
+        cur_state = _classify(float(t[d]), float(ma200[d]), float(env[d]))
+        if cur_state != prev_state:
+            price = round(float(t[d]), 2)
+            pnl = None
+            if prev_state == "하락" and cur_state in ("집중투자", "과열"):
+                # entering TQQQ
+                entry_price = price
+            elif prev_state in ("집중투자", "과열") and cur_state == "하락":
+                # exiting TQQQ
+                if entry_price is not None:
+                    pnl = round((price / entry_price - 1) * 100, 2)
+                entry_price = None
+            transitions.append({
+                "date": d.strftime('%Y-%m-%d'),
+                "from": prev_state,
+                "to": cur_state,
+                "price": price,
+                "pnl": pnl,
+            })
+        prev_state = cur_state
+    return transitions[-5:]
+
+def build_state(t, ma200, qqq, spy, sgov):
     price = float(t.iloc[-1])
     ma = float(ma200.iloc[-1])
     envelope = ma * 1.05
@@ -51,6 +101,25 @@ def build_state(t, ma200):
             "🟧 과열 상황", "fire",
             "TQQQ 유지, 신규자금은 SPYM", "🟡")
 
+    # drawdown from 52-week high
+    drawdown = round((price / high52 - 1) * 100, 2)
+
+    # SGOV yield estimate (annualized from 1-month return)
+    sgov_1m_ret = _period_return(sgov, 22)
+    sgov_yield = round(sgov_1m_ret * 12, 2) if sgov_1m_ret is not None else None
+
+    # comparison returns
+    compare = {}
+    for name, series in [("TQQQ", t), ("QQQ", qqq), ("SPY", spy)]:
+        compare[name] = {
+            "1w": _period_return(series, 5),
+            "1m": _period_return(series, 22),
+            "3m": _period_return(series, 66),
+        }
+
+    # signal history
+    signals = build_signal_history(t, ma200)
+
     return {
         "date": t.index[-1].strftime('%Y-%m-%d'),
         "price": round(price, 2),
@@ -64,6 +133,10 @@ def build_state(t, ma200):
         "icon": icon,
         "action": action,
         "diff_emoji": diff_emoji,
+        "drawdown": drawdown,
+        "sgov_yield": sgov_yield,
+        "compare": compare,
+        "signals": signals,
     }
 
 def draw_chart(t, ma200, s, days, out_path, title_range):
@@ -109,7 +182,48 @@ def draw_chart(t, ma200, s, days, out_path, title_range):
     plt.close(fig)
     print(f"✅ 차트 저장: {out_path}")
 
+def _fmt_ret(v):
+    """Format return value with sign, or '-' if None."""
+    if v is None:
+        return "-"
+    return f"{v:+.2f}%"
+
 def build_section(s):
+    # signal history table
+    sig_rows = ""
+    state_emoji = {"하락": "🟦", "집중투자": "🟥", "과열": "🟧"}
+    for sig in s.get("signals", []):
+        f_em = state_emoji.get(sig['from'], '')
+        t_em = state_emoji.get(sig['to'], '')
+        pnl = sig.get('pnl')
+        if pnl is not None:
+            pnl_str = f"**{pnl:+.2f}%**" if pnl >= 0 else f"**{pnl:+.2f}%**"
+        else:
+            pnl_str = "-"
+        sig_rows += f"| {sig['date']} | {f_em} {sig['from']} → {t_em} {sig['to']} | ${sig['price']} | {pnl_str} |\n"
+    if not sig_rows:
+        sig_rows = "| - | 전환 이력 없음 | - | - |\n"
+
+    # comparison table
+    c = s.get("compare", {})
+    comp_rows = ""
+    for name in ["TQQQ", "QQQ", "SPY"]:
+        r = c.get(name, {})
+        comp_rows += f"| **{name}** | {_fmt_ret(r.get('1w'))} | {_fmt_ret(r.get('1m'))} | {_fmt_ret(r.get('3m'))} |\n"
+
+    # SGOV yield
+    sgov_line = f"{s['sgov_yield']:.2f}% (추정)" if s.get('sgov_yield') is not None else "N/A"
+
+    # drawdown
+    dd = s.get('drawdown', 0)
+    dd_bar_pct = min(abs(dd), 100)
+    if abs(dd) < 10:
+        dd_color = "🟢"
+    elif abs(dd) < 30:
+        dd_color = "🟡"
+    else:
+        dd_color = "🔴"
+
     return f"""## 📊 현재 상황 대시보드
 
 <Info>
@@ -128,17 +242,6 @@ def build_section(s):
   </Card>
 </CardGroup>
 
-### 📈 주요 수치
-
-| 항목 | 값 |
-|---|---:|
-| **TQQQ 종가** | ${s['price']} |
-| **200일 이동평균선** | ${s['ma200']} |
-| **과열선 (200MA +5%)** | ${s['envelope']} |
-| **200일선 대비 괴리** | **{s['diff_pct']:+.2f}%** {s['diff_emoji']} |
-| **52주 최고가** | ${s['high52']} |
-| **52주 최저가** | ${s['low52']} |
-
 ### 📉 200일선 차트
 
 <Frame caption="최근 1년">
@@ -153,11 +256,40 @@ def build_section(s):
 차트는 매일 평일 미국장 마감 후 자동 갱신됩니다. 파란 선은 TQQQ 종가, 빨간 선은 200일선, 주황 점선은 과열선(200MA +5%)입니다.
 </Tip>
 
+### 📈 주요 수치
+
+| 항목 | 값 |
+|---|---:|
+| **TQQQ 종가** | ${s['price']} |
+| **200일 이동평균선** | ${s['ma200']} |
+| **과열선 (200MA +5%)** | ${s['envelope']} |
+| **200일선 대비 괴리** | **{s['diff_pct']:+.2f}%** {s['diff_emoji']} |
+| **52주 최고가** | ${s['high52']} |
+| **52주 최저가** | ${s['low52']} |
+| **SGOV 예상 수익률** | {sgov_line} |
+
+### 📉 드로다운 현황
+
+{dd_color} 52주 최고 대비 **{dd:+.2f}%** (${s['high52']} → ${s['price']})
+
+### 🔄 수익률 비교
+
+| 종목 | 1주 | 1개월 | 3개월 |
+|---|---:|---:|---:|
+{comp_rows}
+### 🔀 최근 시그널 전환 이력
+
+| 날짜 | 전환 | TQQQ 가격 | 손익 |
+|---|---|---:|---:|
+{sig_rows}
 ### 🛒 주문하기
 
 <Card title="토스증권에서 TQQQ 주문" icon="cart-shopping" href="https://www.tossinvest.com/stocks/US20100211003/order">
   현재 신호에 맞춰 바로 주문 페이지로 이동
 </Card>
+
+{{/* TOSS_POSTS_START */}}
+{{/* TOSS_POSTS_END */}}
 
 ---
 """
@@ -201,8 +333,8 @@ def send_telegram(state):
         print(f"⚠️ 텔레그램 전송 실패: {e}")
 
 def main():
-    t, ma200 = fetch_data()
-    state = build_state(t, ma200)
+    t, ma200, qqq, spy, sgov = fetch_data()
+    state = build_state(t, ma200, qqq, spy, sgov)
     print(f"현재 상태: {state['situation']} (TQQQ ${state['price']}, 200MA ${state['ma200']}, 괴리 {state['diff_pct']:+.2f}%)")
 
     draw_chart(t, ma200, state, 252, IMG_1Y, "1Y")
