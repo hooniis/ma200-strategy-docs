@@ -9,7 +9,10 @@ introduction.mdx 의 '현재 상황 대시보드' 섹션과 dashboard-chart.png 
 
 필요 패키지: yfinance, pandas, matplotlib
 """
+import os
 import re
+import urllib.parse
+import urllib.request
 from pathlib import Path
 import yfinance as yf
 import matplotlib.pyplot as plt
@@ -158,6 +161,39 @@ def build_section(s):
 ---
 """
 
+def send_telegram(state):
+    token = os.environ.get("TELEGRAM_BOT_TOKEN")
+    chat_id = os.environ.get("TELEGRAM_CHAT_ID")
+    if not token or not chat_id:
+        print("ℹ️ TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID 미설정 → 전송 생략")
+        return
+    s = state
+    text = (
+        f"📊 *200일선 매매법 일일 스냅샷*\n"
+        f"🗓 {s['date']}\n\n"
+        f"{s['situation']}\n"
+        f"➡️ *{s['action']}*\n\n"
+        f"• TQQQ 종가: *${s['price']}* ({s['daily_ret']:+.2f}%)\n"
+        f"• 200일선: ${s['ma200']}\n"
+        f"• 과열선(+5%): ${s['envelope']}\n"
+        f"• 200일선 대비: *{s['diff_pct']:+.2f}%* {s['diff_emoji']}\n"
+        f"• 52주 고/저: ${s['high52']} / ${s['low52']}\n\n"
+        f"🔗 [대시보드](https://ma200-strategy-docs.mintlify.app/dashboard) · "
+        f"[주문](https://www.tossinvest.com/stocks/US20100211003/order)"
+    )
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    data = urllib.parse.urlencode({
+        "chat_id": chat_id,
+        "text": text,
+        "parse_mode": "Markdown",
+        "disable_web_page_preview": "true",
+    }).encode()
+    try:
+        with urllib.request.urlopen(url, data=data, timeout=10) as r:
+            print(f"✅ 텔레그램 전송: {r.status}")
+    except Exception as e:
+        print(f"⚠️ 텔레그램 전송 실패: {e}")
+
 def main():
     t, ma200 = fetch_data()
     state = build_state(t, ma200)
@@ -179,6 +215,8 @@ def main():
         return
     MDX_PATH.write_text(content, encoding='utf-8')
     print(f"✅ 업데이트 완료: {MDX_PATH}")
+
+    send_telegram(state)
 
 if __name__ == "__main__":
     main()

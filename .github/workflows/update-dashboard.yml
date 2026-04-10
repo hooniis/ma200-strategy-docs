@@ -24,6 +24,9 @@ jobs:
           python -m playwright install --with-deps chromium
 
       - name: Run chart/status update
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python scripts/update-dashboard.py
 
       - name: Scrape Toss community posts
